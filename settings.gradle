@@ -1,1 +1,2 @@
+include ':powerup'
 include 'desktop', 'android', 'core'
