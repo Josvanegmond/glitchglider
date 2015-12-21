@@ -70,8 +70,14 @@ public class AssetService {
 
                     asset._setModel(_assetManager.get(asset.getFileName()));
                     _loadedAssetMap.put(assetClass, asset);
-                    Log.d("Asset loaded");
-                    callback.onAssetLoaded(assetClass);
+
+                    Gdx.app.postRunnable(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d("Asset loaded");
+                            callback.onAssetLoaded(assetClass);
+                        }
+                    });
                 }
             }).start();
         } else {
@@ -106,13 +112,13 @@ public class AssetService {
         _instantiatedAssetsList.remove(asset);
     }
 
-    public <T> List<T> getAssetList(Class<T> assetType) {
-        List<T> assetList = new ArrayList<>();
+    public <T> List<Asset<?, T>> getAssetList(Class<T> assetType) {
+        List<Asset<?, T>> assetList = new ArrayList<>();
         for (Asset asset : _instantiatedAssetsList) {
             Object assetInstance = asset.getModelInstance();
             if (assetInstance != null) {
                 if (assetInstance.getClass() == assetType) {
-                    assetList.add((T)assetInstance);
+                    assetList.add(asset);
                 }
             }
         }
