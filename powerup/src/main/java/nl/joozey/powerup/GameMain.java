@@ -19,13 +19,16 @@ import java.util.List;
 public abstract class GameMain extends ApplicationAdapter {
 
     private Camera _camera;
+    private Camera _leftEye, _rightEye;
     private ModelBatch _modelBatch;
 
     private Environment _environment;
     private Skybox _skybox;
-    private Color _atmosphere = new Color( 0.7f, 0.88f, 0.95f, 1f );
+    private Color _atmosphere = new Color(0.7f, 0.88f, 0.95f, 1f);
 
     private CameraInputController _cameraInputController;
+    private boolean _render3D = true;
+    private float _eyeWidth = 1f;
 
     @Override
     public void create() {
@@ -35,6 +38,8 @@ public abstract class GameMain extends ApplicationAdapter {
         _camera.near = 0.1f;
         _camera.far = 300f;
         _camera.update();
+
+        _setup3DView();
 
         _environment = new Environment();
         _environment.set(new ColorAttribute(ColorAttribute.AmbientLight, .4f, .4f, .4f, 1f));
@@ -59,26 +64,36 @@ public abstract class GameMain extends ApplicationAdapter {
         run();
 
         _cameraInputController.update();
+        _update3DView();
 
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(.1f, .1f, .1f, 1);
         Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT | GL20.GL_COLOR_BUFFER_BIT);
 
-        double daySpeed = 4d;
-        float time = (float)((TimeUtils.millis()/100d * daySpeed) % 360);
-        Log.d("Time: " + time);
-        _skybox.render(time, ((ColorAttribute) (_environment.get(ColorAttribute.Fog))).color, _camera);
+        if (_render3D) {
+            _renderScreen(_leftEye, 0, 0, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
+            _renderScreen(_rightEye, Gdx.graphics.getWidth() / 2, 0, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
+        } else {
+            _renderScreen(_camera, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        }
+    }
 
-        ColorAttribute colorAttribute = (ColorAttribute)_environment.get( ColorAttribute.Fog );
-        colorAttribute.color.r = (float)(Math.cos( Math.toRadians( time) ) + 1f ) / 2f * _atmosphere.r + 0.03f;
-        colorAttribute.color.g = (float)(Math.cos( Math.toRadians( time) ) + 1f ) / 2f * _atmosphere.g;
-        colorAttribute.color.b = (float)(Math.cos( Math.toRadians( time) ) + 1f ) / 2f * _atmosphere.b + 0.08f;
+    private void _renderScreen(Camera camera, int x, int y, int w, int h) {
+        Gdx.gl.glViewport(x, y, w, h);
+
+        double daySpeed = 1d;
+        float time = (float) ((TimeUtils.millis() / 100d * daySpeed) % 360);
+        _skybox.render(time, ((ColorAttribute) (_environment.get(ColorAttribute.Fog))).color, camera);
+
+        ColorAttribute colorAttribute = (ColorAttribute) _environment.get(ColorAttribute.Fog);
+        colorAttribute.color.r = (float) (Math.cos(Math.toRadians(time)) + 1f) / 2f * _atmosphere.r + 0.03f;
+        colorAttribute.color.g = (float) (Math.cos(Math.toRadians(time)) + 1f) / 2f * _atmosphere.g;
+        colorAttribute.color.b = (float) (Math.cos(Math.toRadians(time)) + 1f) / 2f * _atmosphere.b + 0.08f;
         colorAttribute.color.a = 1f;
 
 
-        _modelBatch.begin(_camera);
+        _modelBatch.begin(camera);
         List<Asset<?, ModelInstance>> assetList = AssetService.getInstance().getAssetList(ModelInstance.class);
-        for(Asset<?, ModelInstance> asset : assetList) {
+        for (Asset<?, ModelInstance> asset : assetList) {
             _modelBatch.render(asset.getModelInstance(), _environment, asset.getShader());
         }
         _modelBatch.end();
@@ -102,5 +117,41 @@ public abstract class GameMain extends ApplicationAdapter {
 
     public void setEnvironment(Environment environment) {
         _environment = environment;
+    }
+
+    private void _setup3DView() {
+        _leftEye = new PerspectiveCamera(75, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
+        _leftEye.lookAt(0, 0, 0);
+        _leftEye.near = 0.1f;
+        _leftEye.far = 300f;
+        _leftEye.update();
+
+        _rightEye = new PerspectiveCamera(75, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
+        _rightEye.lookAt(0, 0, 0);
+        _rightEye.near = 0.1f;
+        _rightEye.far = 300f;
+        _rightEye.update();
+    }
+
+    private void _update3DView() {
+
+        int focus = 30;
+
+        _leftEye.position.set(_camera.position);
+        _leftEye.direction.set(_camera.direction);
+        _leftEye.up.set(_camera.up);
+
+        _leftEye.rotateAround(_camera.direction.cpy().scl(focus).add(_camera.position), _camera.up, -1.2f);
+
+        _leftEye.update();
+
+
+        _rightEye.position.set(_camera.position);
+        _rightEye.direction.set(_camera.direction);
+        _rightEye.up.set(_camera.up);
+
+        _rightEye.rotateAround(_camera.direction.cpy().scl(focus).add(_camera.position), _camera.up, 1.2f);
+
+        _rightEye.update();
     }
 }

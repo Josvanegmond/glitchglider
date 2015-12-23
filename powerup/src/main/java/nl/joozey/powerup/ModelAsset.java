@@ -2,6 +2,8 @@ package nl.joozey.powerup;
 
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
 
 /**
  * Created by josvanegmond on 12/12/15.
@@ -28,21 +30,27 @@ public abstract class ModelAsset extends Asset<Model, ModelInstance> {
         return ModelInstance.class;
     }
 
-    public void addMovement(float x, float y, float z) {
-        _x += x;
-        _y += y;
-        _z += z;
-        _setMovement();
+    public void addPosition(float x, float y, float z) {
+        Vector3 position = new Matrix4()
+                .translate(_x, _y, _z)
+                .rotate(0, 1, 0, _yaw)
+                .rotate(1, 0, 0, _pitch)
+                .rotate(0, 0, 1, _roll)
+                .translate(x, y, z)
+                .getTranslation(new Vector3());
+
+        _x = position.x;
+        _y = position.y;
+        _z = position.z;
+
+        getModelInstance().transform.setTranslation(_x, _y ,_z);
     }
 
-    public void setMovement(float x, float y, float z) {
+    public void setPosition(float x, float y, float z) {
         _x = x;
         _y = y;
         _z = z;
-        _setMovement();
-    }
 
-    private void _setMovement() {
         getModelInstance().transform.setTranslation(_x, _y, _z);
     }
 
@@ -60,7 +68,21 @@ public abstract class ModelAsset extends Asset<Model, ModelInstance> {
         _setEulerRotation();
     }
 
+    public void setEulerRoll(float roll) {
+        _roll = roll;
+        _setEulerRotation();
+    }
+
+    public void setEulerPitch(float pitch) {
+        _pitch = pitch;
+        _setEulerRotation();
+    }
+
     private void _setEulerRotation() {
         getModelInstance().transform.setFromEulerAngles(_yaw, _pitch, _roll);
+    }
+
+    public Vector3 getPosition() {
+        return new Vector3(_x, _y, _z);
     }
 }

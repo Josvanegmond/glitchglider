@@ -64,4 +64,6 @@ public abstract class Asset<M, I> {
     public abstract String getFileName();
 
     protected abstract I instantiate(M model);
+
+
 }
