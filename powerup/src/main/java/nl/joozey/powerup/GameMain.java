@@ -2,6 +2,7 @@ package nl.joozey.powerup;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -12,7 +13,10 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.util.List;
 
@@ -29,6 +33,9 @@ public abstract class GameMain extends ApplicationAdapter {
     private CameraInputController _cameraInputController;
     private boolean _render3D = true;
     private float _eyeWidth = 1f;
+
+    private Stage _stage;
+    private Viewport _viewport;
 
     @Override
     public void create() {
@@ -48,7 +55,11 @@ public abstract class GameMain extends ApplicationAdapter {
         _modelBatch = new ModelBatch();
 
         _cameraInputController = new CameraInputController(_camera);
-        Gdx.input.setInputProcessor(_cameraInputController);
+
+        _viewport = new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), _camera);
+        _stage = new Stage(_viewport);
+
+        Gdx.input.setInputProcessor(new InputMultiplexer(_cameraInputController, _stage));
 
         initialise();
     }
@@ -70,15 +81,27 @@ public abstract class GameMain extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT | GL20.GL_COLOR_BUFFER_BIT);
 
         if (_render3D) {
-            _renderScreen(_leftEye, 0, 0, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
-            _renderScreen(_rightEye, Gdx.graphics.getWidth() / 2, 0, Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight());
+            int w = Gdx.graphics.getWidth() / 2;
+            int h = Gdx.graphics.getHeight();
+
+            _viewport.setWorldSize(w, h);
+
+            _renderScreen(_leftEye, 0, 0, w, h);
+            _renderScreen(_rightEye, w, 0, w, h);
         } else {
-            _renderScreen(_camera, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            int w = Gdx.graphics.getWidth();
+            int h = Gdx.graphics.getHeight();
+
+            _viewport.setWorldSize(w, h);
+
+            _renderScreen(_camera, 0, 0, w, h);
         }
     }
 
     private void _renderScreen(Camera camera, int x, int y, int w, int h) {
         Gdx.gl.glViewport(x, y, w, h);
+
+        _stage.draw();
 
         double daySpeed = 1d;
         float time = (float) ((TimeUtils.millis() / 100d * daySpeed) % 360);
@@ -105,6 +128,10 @@ public abstract class GameMain extends ApplicationAdapter {
 
     public Camera getCamera() {
         return _camera;
+    }
+
+    public Stage getStage() {
+        return _stage;
     }
 
     public void setCamera(Camera camera) {

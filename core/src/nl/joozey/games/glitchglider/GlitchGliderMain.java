@@ -1,5 +1,6 @@
 package nl.joozey.games.glitchglider;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
@@ -15,6 +16,7 @@ import nl.joozey.powerup.AssetService;
 import nl.joozey.powerup.GameMain;
 import nl.joozey.powerup.Log;
 import nl.joozey.powerup.Skybox;
+import nl.joozey.powerup.TextureAsset;
 
 public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAssetCallback {
 
@@ -27,6 +29,10 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
         _as.loadAsset(this, CargoShip.class);
         _as.loadAsset(this, ReconShip.class);
         _as.loadAsset(this, Terrain.class);
+
+        _as.loadAsset(this, new TextureAsset("eye_cross.png"));
+        _as.loadAsset(this, new TextureAsset("eye_stereo.png"));
+        _as.loadAsset(this, new TextureAsset("eye_normal.png"));
 
         Environment environment = new Environment();
         environment.add(new DirectionalLight().set(1f, .9f, .8f, .75f, -.65f, .25f));
@@ -43,6 +49,14 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
                 Gdx.files.internal("envmaps/back2.jpg"),
                 Gdx.files.internal("envmaps/horizon.bmp"));
         setSkybox(skybox);
+
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            GameControlHelper.getInstance().setControl(GameControlHelper.ControlType.MOBILE);
+        }
+
+        if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+            GameControlHelper.getInstance().setControl(GameControlHelper.ControlType.DESKTOP);
+        }
     }
 
     @Override
@@ -75,11 +89,13 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
     public void run() {
         if (_playerShip != null) {
 
+            GameControlHelper.GameControl gameControl = GameControlHelper.getInstance().getControl();
+
             pitch *= 0.9f;
-            pitch += Gdx.input.getRoll() / 180f + .45f;
+            pitch += gameControl.getRoll() / 180f + .45f;
 
             roll *= 0.8f;
-            roll += Gdx.input.getPitch() / 180f;
+            roll += gameControl.getPitch() / 180f;
 
             _playerShip.setEulerRoll(-roll * 45);
             _playerShip.addEulerRotation(roll, pitch, 0);

@@ -46,7 +46,11 @@ public class AssetService {
             e.printStackTrace();
         }
 
-        final Asset asset = tempAsset;
+        loadAsset(callback, tempAsset);
+    }
+
+
+    public <M, I> void loadAsset(final OnLoadAssetCallback callback, final Asset<M, I> asset) {
         if (asset._getModel() == null) {
             new Thread(new Runnable() {
                 @Override
@@ -68,14 +72,14 @@ public class AssetService {
                         }
                     }
 
-                    asset._setModel(_assetManager.get(asset.getFileName()));
-                    _loadedAssetMap.put(assetClass, asset);
+                    asset._setModel((M)_assetManager.get(asset.getFileName()));
+                    _loadedAssetMap.put(asset.getClass(), asset);
 
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
                         public void run() {
                             Log.d("Asset loaded");
-                            callback.onAssetLoaded(assetClass);
+                            callback.onAssetLoaded(asset.getClass());
                         }
                     });
                 }
