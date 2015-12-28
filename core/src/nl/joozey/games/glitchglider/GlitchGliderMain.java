@@ -30,9 +30,10 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
         _as.loadAsset(this, ReconShip.class);
         _as.loadAsset(this, Terrain.class);
 
-        _as.loadAsset(this, new TextureAsset("eye_cross.png"));
-        _as.loadAsset(this, new TextureAsset("eye_stereo.png"));
-        _as.loadAsset(this, new TextureAsset("eye_normal.png"));
+        _as.loadAssets(this,
+                new TextureAsset("eye_cross.png"),
+                new TextureAsset("eye_stereo.png"),
+                new TextureAsset("eye_normal.png"));
 
         Environment environment = new Environment();
         environment.add(new DirectionalLight().set(1f, .9f, .8f, .75f, -.65f, .25f));
@@ -51,17 +52,27 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
         setSkybox(skybox);
 
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
-            GameControlHelper.getInstance().setControl(GameControlHelper.ControlType.MOBILE);
+            GameControlHelper.getInstance(getCamera()).setControl(GameControlHelper.ControlType.MOBILE);
         }
 
         if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-            GameControlHelper.getInstance().setControl(GameControlHelper.ControlType.DESKTOP);
+            GameControlHelper.getInstance(getCamera()).setControl(GameControlHelper.ControlType.DESKTOP);
         }
     }
 
     @Override
     public void onAssetLoaded(Class<? extends Asset> assetClass) {
         Log.d(assetClass.getName());
+
+        //anonymous textures loaded
+        if (assetClass == TextureAsset.class) {
+            CycleButton cycleButton = new CycleButton();
+            cycleButton.addTextures(
+                    _as.instantiateAsset(TextureAsset.class, "eye_normal.png"),
+                    _as.instantiateAsset(TextureAsset.class, "eye_cross.png"),
+                    _as.instantiateAsset(TextureAsset.class, "eye_stereo.png"));
+            getStage().addActor(cycleButton);
+        }
 
         if (assetClass == CargoShip.class) {
             for (int i = 0; i < 4; i++) {
@@ -89,17 +100,17 @@ public class GlitchGliderMain extends GameMain implements AssetService.OnLoadAss
     public void run() {
         if (_playerShip != null) {
 
-            GameControlHelper.GameControl gameControl = GameControlHelper.getInstance().getControl();
+            GameControlHelper.GameControl gameControl = GameControlHelper.getInstance(getCamera()).getControl();
 
             pitch *= 0.9f;
-            pitch += gameControl.getRoll() / 180f + .45f;
+            pitch += gameControl.getRoll();
 
             roll *= 0.8f;
-            roll += gameControl.getPitch() / 180f;
+            roll += gameControl.getPitch();
 
             _playerShip.setEulerRoll(-roll * 45);
             _playerShip.addEulerRotation(roll, pitch, 0);
-            _playerShip.addPosition(0, 0, .5f);
+            _playerShip.addPosition(0, 0, 1f);
             setCamera(_playerShip.getModelInstance().transform);
 
             if (_playerShip.getPosition().len2() > 70000) {

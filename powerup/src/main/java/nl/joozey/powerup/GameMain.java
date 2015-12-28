@@ -31,7 +31,7 @@ public abstract class GameMain extends ApplicationAdapter {
     private Color _atmosphere = new Color(0.7f, 0.88f, 0.95f, 1f);
 
     private CameraInputController _cameraInputController;
-    private boolean _render3D = true;
+    private boolean _render3D = false;
     private float _eyeWidth = 1f;
 
     private Stage _stage;
@@ -101,8 +101,6 @@ public abstract class GameMain extends ApplicationAdapter {
     private void _renderScreen(Camera camera, int x, int y, int w, int h) {
         Gdx.gl.glViewport(x, y, w, h);
 
-        _stage.draw();
-
         double daySpeed = 1d;
         float time = (float) ((TimeUtils.millis() / 100d * daySpeed) % 360);
         _skybox.render(time, ((ColorAttribute) (_environment.get(ColorAttribute.Fog))).color, camera);
@@ -120,6 +118,9 @@ public abstract class GameMain extends ApplicationAdapter {
             _modelBatch.render(asset.getModelInstance(), _environment, asset.getShader());
         }
         _modelBatch.end();
+
+
+        _stage.draw();
     }
 
     public abstract void initialise();

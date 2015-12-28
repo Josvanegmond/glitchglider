@@ -16,6 +16,8 @@ public class TextureAsset extends Asset<Texture, Sprite> {
 
     private String _fileName;
 
+    public TextureAsset() {}
+
     public TextureAsset(String fileName) {
         _fileName = fileName;
     }
@@ -35,5 +37,10 @@ public class TextureAsset extends Asset<Texture, Sprite> {
     @Override
     public String getFileName() {
         return _fileName;
+    }
+
+    @Override
+    public void setFileName(String fileName) {
+        _fileName = fileName;
     }
 }

@@ -1,6 +1,7 @@
 package nl.joozey.games.glitchglider;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 
 /**
  * Created by mint on 25-12-15.
@@ -14,11 +15,13 @@ public class GameControlHelper {
 
     private GameControl _control;
     private static GameControlHelper _instance;
+    private Camera _camera;
 
-    public static GameControlHelper getInstance() {
+    public static GameControlHelper getInstance(Camera camera) {
         if (_instance == null) {
             _instance = new GameControlHelper();
         }
+        _instance._camera = camera;
         return _instance;
     }
 
@@ -43,12 +46,12 @@ public class GameControlHelper {
 
         @Override
         public float getRoll() {
-            return Gdx.input.getY() - Gdx.graphics.getWidth() / 2;
+            return (_camera.viewportWidth / 2f - Gdx.input.getX()) / 270f;
         }
 
         @Override
         public float getPitch() {
-            return -Gdx.input.getX() + Gdx.graphics.getHeight() / 2;
+            return (Gdx.input.getY() - _camera.viewportHeight / 2f) / 270f;
         }
     };
 
@@ -56,12 +59,12 @@ public class GameControlHelper {
 
         @Override
         public float getRoll() {
-            return Gdx.input.getRoll();
+            return Gdx.input.getRoll() / 90f + 1f;
         }
 
         @Override
         public float getPitch() {
-            return Gdx.input.getPitch();
+            return Gdx.input.getPitch() / 90f;
         }
     };
 

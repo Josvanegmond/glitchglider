@@ -11,11 +11,6 @@ public abstract class Asset<M, I> {
     private I _instance;
     private Shader _shader;
 
-    public void start() {
-        AssetService.getInstance().setAssetModel(this);
-        AssetService.getInstance().addInstanceAsset(this);
-    }
-
     public void remove() {
         AssetService.getInstance().removeInstanceAsset(this);
     }
@@ -62,6 +57,7 @@ public abstract class Asset<M, I> {
     public void onInstantiated() {}
 
     public abstract String getFileName();
+    public void setFileName(String fileName) {}
 
     protected abstract I instantiate(M model);
 

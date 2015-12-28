@@ -19,7 +19,7 @@ public class AssetService {
     private AssetManager _assetManager;
 
     private List<Asset> _instantiatedAssetsList;
-    private Map<Class<? extends Asset>, Asset> _loadedAssetMap;
+    private Map<Class<? extends Asset>, Map<String, Asset>> _loadedAssetMap;
 
     public static AssetService getInstance() {
         if (_instance == null) {
@@ -35,6 +35,23 @@ public class AssetService {
         _loadedAssetMap = new HashMap<>();
     }
 
+    @SafeVarargs
+    public final <M, I> void loadAssets(final OnLoadAssetCallback callback, final Class<? extends Asset<M, I>>... assetClasses) {
+        final int[] loadedAssets = new int[]{0};
+        for (final Class<? extends Asset<M, I>> assetClass : assetClasses) {
+            loadAsset(new OnLoadAssetCallback() {
+                @Override
+                public void onAssetLoaded(Class<? extends Asset> assetClass) {
+                    loadedAssets[0]++;
+                    //all assets loaded?
+                    if (loadedAssets[0] >= assetClasses.length) {
+                        callback.onAssetLoaded(assetClass);
+                    }
+                }
+            }, assetClass);
+        }
+    }
+
     public <M, I> void loadAsset(final OnLoadAssetCallback callback, final Class<? extends Asset<M, I>> assetClass) {
 
         Asset tempAsset = null;
@@ -46,11 +63,27 @@ public class AssetService {
             e.printStackTrace();
         }
 
-        loadAsset(callback, tempAsset);
+        _loadAsset(callback, tempAsset);
     }
 
+    @SafeVarargs
+    public final <M, I> void loadAssets(final OnLoadAssetCallback callback, final Asset<M, I>... assets) {
+        final int[] loadedAssets = new int[]{0};
+        for (final Asset asset : assets) {
+            _loadAsset(new OnLoadAssetCallback() {
+                @Override
+                public void onAssetLoaded(Class<? extends Asset> assetClass) {
+                    loadedAssets[0]++;
+                    //all assets loaded?
+                    if (loadedAssets[0] >= assets.length) {
+                        callback.onAssetLoaded(assetClass);
+                    }
+                }
+            }, asset);
+        }
+    }
 
-    public <M, I> void loadAsset(final OnLoadAssetCallback callback, final Asset<M, I> asset) {
+    private <M, I> void _loadAsset(final OnLoadAssetCallback callback, final Asset<M, I> asset) {
         if (asset._getModel() == null) {
             new Thread(new Runnable() {
                 @Override
@@ -72,8 +105,8 @@ public class AssetService {
                         }
                     }
 
-                    asset._setModel((M)_assetManager.get(asset.getFileName()));
-                    _loadedAssetMap.put(asset.getClass(), asset);
+                    asset._setModel((M) _assetManager.get(asset.getFileName()));
+                    _addLoadedAsset(asset);
 
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
@@ -89,7 +122,18 @@ public class AssetService {
         }
     }
 
-    public <T extends Asset<?, ?>> T instantiateAsset(Class<T> assetClass) {
+    private <M, I> void _addLoadedAsset(Asset<M, I> asset) {
+        Map<String, Asset> assetMap = _loadedAssetMap.get(asset.getClass());
+        if (assetMap == null) {
+            assetMap = new HashMap<>();
+            _loadedAssetMap.put(asset.getClass(), assetMap);
+        }
+
+        assetMap.put(asset.getFileName(), asset);
+    }
+
+
+    public <M, I, T extends Asset<M, I>> T instantiateAsset(Class<T> assetClass, String fileName) {
         T asset = null;
         try {
             asset = assetClass.newInstance();
@@ -99,20 +143,37 @@ public class AssetService {
             e.printStackTrace();
         }
 
-        asset.start();
+        asset.setFileName(fileName);
+        _setAssetModel(asset);
+        _instantiatedAssetsList.add(asset);
 
         return asset;
     }
 
-    public <M> void setAssetModel(Asset<M, ?> asset) {
-        asset._setModel((M)_loadedAssetMap.get(asset.getClass())._getModel());
-    }
+    public <M, I, T extends Asset<M, I>> T instantiateAsset(Class<T> assetClass) {
+        T asset = null;
+        try {
+            asset = assetClass.newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
 
-    public void addInstanceAsset(Asset asset) {
+        _setAssetModel(asset);
         _instantiatedAssetsList.add(asset);
+
+        return asset;
     }
 
-    public void removeInstanceAsset(Asset asset) {
+    private <M, I> void _setAssetModel(Asset<M, I> asset) {
+        asset._setModel((M) _loadedAssetMap
+                .get(asset.getClass())
+                .get(asset.getFileName())
+                ._getModel());
+    }
+
+    public <M, I> void removeInstanceAsset(Asset<M, I> asset) {
         _instantiatedAssetsList.remove(asset);
     }
 
